@@ -1,83 +1,32 @@
-import { useEffect, useState } from "react";
-import axios from "./api/axios";
-
-function WeatherIcon({ type }) {
-  const gradientId = "iconGradient";
-
-  return (
-    <svg width="120" height="120" viewBox="0 0 24 24" fill="none">
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="24" y2="24">
-          <stop offset="0%" stopColor="#60a5fa" />
-          <stop offset="100%" stopColor="#c084fc" />
-        </linearGradient>
-      </defs>
-
-      {type === "Clear" && (
-        <>
-          <circle
-            cx="12"
-            cy="12"
-            r="5"
-            stroke={`url(#${gradientId})`}
-            strokeWidth="2"
-          />
-          <g stroke={`url(#${gradientId})`} strokeWidth="2">
-            <line x1="12" y1="1" x2="12" y2="4" />
-            <line x1="12" y1="20" x2="12" y2="23" />
-            <line x1="1" y1="12" x2="4" y2="12" />
-            <line x1="20" y1="12" x2="23" y2="12" />
-          </g>
-        </>
-      )}
-
-      {type === "Clouds" && (
-        <path
-          d="M5 16h13a4 4 0 0 0 0-8 6 6 0 0 0-11-1 4 4 0 0 0-2 9z"
-          stroke={`url(#${gradientId})`}
-          strokeWidth="2"
-        />
-      )}
-
-      {type === "Rain" && (
-        <>
-          <path
-            d="M5 14h13a4 4 0 0 0 0-8 6 6 0 0 0-11-1 4 4 0 0 0-2 9z"
-            stroke={`url(#${gradientId})`}
-            strokeWidth="2"
-          />
-          <g stroke={`url(#${gradientId})`} strokeWidth="2">
-            <line x1="8" y1="18" x2="8" y2="22" />
-            <line x1="12" y1="18" x2="12" y2="22" />
-            <line x1="16" y1="18" x2="16" y2="22" />
-          </g>
-        </>
-      )}
-    </svg>
-  );
-}
+import { useState, useEffect } from "react";
+import axios from "./api/axios.js";
 
 function App() {
   const [data, setData] = useState({});
   const [location, setLocation] = useState("");
+  const [history, setHistory] = useState([]);
 
   const API_KEY = import.meta.env.VITE_WEATHER_KEY;
 
+  // ==========================
+  // FETCH WEATHER
+  // ==========================
   const fetchWeather = async (city) => {
     try {
       const response = await axios.get(
         `/weather?q=${city}&units=metric&appid=${API_KEY}`
       );
+
       setData(response.data);
+      saveHistory(city);
     } catch (error) {
       alert("Kota tidak ditemukan!");
     }
   };
 
-  useEffect(() => {
-    fetchWeather("Jakarta");
-  }, []);
-
+  // ==========================
+  // SEARCH ENTER
+  // ==========================
   const searchLocation = (event) => {
     if (event.key === "Enter" && location.trim() !== "") {
       fetchWeather(location);
@@ -85,89 +34,191 @@ function App() {
     }
   };
 
-  useEffect
+  // ==========================
+  // SAVE HISTORY
+  // ==========================
+  const saveHistory = (city) => {
+    let updatedHistory = [
+      city,
+      ...history.filter((item) => item !== city),
+    ];
+
+    if (updatedHistory.length > 5) {
+      updatedHistory = updatedHistory.slice(0, 5);
+    }
+
+    setHistory(updatedHistory);
+    localStorage.setItem("weatherHistory", JSON.stringify(updatedHistory));
+  };
+
+  // ==========================
+  // LOAD LAST SEARCH
+  // ==========================
+  useEffect(() => {
+    const storedHistory = localStorage.getItem("weatherHistory");
+
+    if (storedHistory) {
+      const parsedHistory = JSON.parse(storedHistory);
+      setHistory(parsedHistory);
+
+      if (parsedHistory.length > 0) {
+        fetchWeather(parsedHistory[0]);
+      }
+    } else {
+      fetchWeather("Jakarta");
+    }
+  }, []);
+
+  // ==========================
+  // FORMAT TIME
+  // ==========================
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#1e293b] text-white flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-slate-900 text-white p-6">
 
-      {/* Soft Glow Background */}
-      <div className="absolute w-96 h-96 bg-blue-500/20 blur-3xl rounded-full -top-20 -left-20"></div>
-      <div className="absolute w-96 h-96 bg-purple-500/20 blur-3xl rounded-full bottom-0 right-0"></div>
+      {/* HEADER */}
+      <div className="bg-white/5 rounded-3xl p-6 mb-6 border border-white/10 flex items-center justify-between">
 
-      <div className="relative z-10 w-full max-w-md">
-
-        {/* Title */}
-        <h1 className="text-center text-4xl font-extralight tracking-[0.3em] mb-12 opacity-80">
-          WEATHER
-        </h1>
-
-        {/* Search */}
-        <div className="relative mb-10">
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            onKeyDown={searchLocation}
-            placeholder="Search city..."
-            className="w-full p-4 pl-12 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition-all"
-          />
+        <div className="flex items-center gap-3">
           <svg
-            className="absolute left-4 top-4 opacity-50"
-            width="20"
-            height="20"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-8 h-8 text-yellow-400"
+            fill="currentColor"
             viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
           >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <path d="M6 19a4 4 0 010-8 5 5 0 019.9-1.1A3.5 3.5 0 1117.5 19H6z" />
           </svg>
+          <h1 className="text-2xl tracking-widest font-light">
+            Weather Dashboard
+          </h1>
         </div>
 
-        {/* Weather Card */}
-        {data.name && (
-          <div className="bg-white/5 backdrop-blur-2xl p-10 rounded-3xl border border-white/10 shadow-2xl text-center transition-all duration-500 hover:shadow-blue-500/20">
+        <input
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          onKeyDown={searchLocation}
+          placeholder="Cari kota..."
+          className="p-3 w-64 rounded-xl bg-white/10 border border-white/20 outline-none focus:border-blue-400 transition"
+        />
+      </div>
 
-            <h2 className="text-2xl font-light tracking-widest text-gray-300">
-              {data.name}
-            </h2>
+      {/* GRID */}
+      <div className="grid md:grid-cols-3 gap-6">
 
-            <div className="flex justify-center my-8">
-              <WeatherIcon type={data.weather[0].main} />
-            </div>
+        {/* HISTORY PANEL */}
+        <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
+          <h3 className="text-gray-400 mb-4 text-sm tracking-widest">
+            PENCARIAN TERAKHIR
+          </h3>
 
-            <h3 className="text-8xl font-thin tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              {data.main?.temp.toFixed()}°
-            </h3>
-
-            <p className="mt-2 text-sm uppercase tracking-[0.3em] text-gray-400">
-              {data.weather[0].main}
-            </p>
-
-            <div className="flex justify-between mt-12 pt-6 border-t border-white/10 text-sm">
-
-              <div className="text-center">
-                <p className="text-gray-500 uppercase text-xs tracking-widest">
-                  Humidity
-                </p>
-                <p className="text-lg font-light">
-                  {data.main?.humidity}%
-                </p>
-              </div>
-
-              <div className="text-center">
-                <p className="text-gray-500 uppercase text-xs tracking-widest">
-                  Wind
-                </p>
-                <p className="text-lg font-light">
-                  {data.wind?.speed} m/s
-                </p>
-              </div>
-
-            </div>
+          <div className="flex flex-col gap-3">
+            {history.length > 0 ? (
+              history.map((city, index) => (
+                <button
+                  key={index}
+                  onClick={() => fetchWeather(city)}
+                  className="text-left p-3 bg-white/5 hover:bg-blue-500/20 rounded-xl transition"
+                >
+                  {city}
+                </button>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm">Belum ada pencarian</p>
+            )}
           </div>
-        )}
+        </div>
 
+        {/* WEATHER PANEL */}
+        <div className="md:col-span-2 bg-white/5 p-10 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl">
+
+          {data.name ? (
+            <>
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+
+                {/* LEFT SIDE */}
+                <div>
+                  <h2 className="text-3xl font-light tracking-widest">
+                    {data.name}
+                    <span className="text-blue-400 text-lg ml-2">
+                      ({data.sys?.country})
+                    </span>
+                  </h2>
+
+                  <div className="mt-6">
+                    <h1 className="text-8xl font-bold">
+                      {data.main?.temp.toFixed()}°C
+                    </h1>
+                  </div>
+
+                  <p className="mt-4 text-xl text-blue-300 uppercase tracking-widest">
+                    {data.weather?.[0]?.main}
+                  </p>
+
+                  <p className="text-gray-400 capitalize mt-2">
+                    {data.weather?.[0]?.description}
+                  </p>
+                </div>
+
+                {/* RIGHT SIDE */}
+                <div className="flex flex-col items-center justify-center gap-6">
+
+                  {data.weather?.[0]?.icon && (
+                    <img
+                      src={`https://openweathermap.org/img/wn/${data.weather[0].icon}@4x.png`}
+                      alt="weather icon"
+                      className="w-32 h-32 drop-shadow-lg"
+                    />
+                  )}
+
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm">Sunrise</p>
+                    <p className="text-xl font-bold">
+                      {data.sys?.sunrise && formatTime(data.sys.sunrise)}
+                    </p>
+                  </div>
+
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm">Sunset</p>
+                    <p className="text-xl font-bold">
+                      {data.sys?.sunset && formatTime(data.sys.sunset)}
+                    </p>
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* BOTTOM INFO */}
+              <div className="grid grid-cols-2 gap-6 mt-10 pt-6 border-t border-white/10">
+
+                <div className="bg-white/5 p-4 rounded-xl">
+                  <p className="text-gray-400 text-sm">Kelembapan</p>
+                  <p className="text-xl font-bold">
+                    {data.main?.humidity}%
+                  </p>
+                </div>
+
+                <div className="bg-white/5 p-4 rounded-xl">
+                  <p className="text-gray-400 text-sm">Angin</p>
+                  <p className="text-xl font-bold">
+                    {data.wind?.speed} MPH
+                  </p>
+                </div>
+
+              </div>
+            </>
+          ) : (
+            <p className="text-gray-400">Loading...</p>
+          )}
+
+        </div>
       </div>
     </div>
   );
