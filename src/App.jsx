@@ -104,7 +104,7 @@ function App() {
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           onKeyDown={searchLocation}
-          placeholder="Cari kota..."
+          placeholder="Search for a city..."
           className="p-3 w-64 rounded-xl bg-white/10 border border-white/20 outline-none focus:border-blue-400 transition"
         />
       </div>
@@ -115,7 +115,7 @@ function App() {
         {/* HISTORY PANEL */}
         <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
           <h3 className="text-gray-400 mb-4 text-sm tracking-widest">
-            PENCARIAN TERAKHIR
+            LAST SEARCH
           </h3>
 
           <div className="flex flex-col gap-3">
@@ -199,14 +199,14 @@ function App() {
               <div className="grid grid-cols-2 gap-6 mt-10 pt-6 border-t border-white/10">
 
                 <div className="bg-white/5 p-4 rounded-xl">
-                  <p className="text-gray-400 text-sm">Kelembapan</p>
+                  <p className="text-gray-400 text-sm">Humidity</p>
                   <p className="text-xl font-bold">
                     {data.main?.humidity}%
                   </p>
                 </div>
 
                 <div className="bg-white/5 p-4 rounded-xl">
-                  <p className="text-gray-400 text-sm">Angin</p>
+                  <p className="text-gray-400 text-sm">Wind</p>
                   <p className="text-xl font-bold">
                     {data.wind?.speed} MPH
                   </p>
